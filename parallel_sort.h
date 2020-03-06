@@ -9,7 +9,16 @@
 #ifndef PARALLEL_SORT_H
 #define PARALLEL_SORT_H
 
+
+#include <vector>
+#include <algorithm>
+#include <math.h>
+#include <numeric>
+
+
 #include <mpi.h>
+
+using namespace std;
 
 /**
  * @brief   Parallel, distributed sorting over all processors in `comm`. Each
@@ -30,6 +39,14 @@ void parallel_sort(int * begin, int* end, MPI_Comm comm);
 /*********************************************************************
  *              Declare your own helper functions here               *
  *********************************************************************/
+
+int random_number_generate(int total);
+
+void sub_array_create(int* begin, int* end, vector<int> &smaller_than_pivot, vector<int> &greater_than_pivot, int pivot);
+
+void compute_srcounts(vector<int> &sendcnts, vector<int> &recvcnts, int barrier, vector<int> arr, vector<int> new_size, MPI_Comm comm, int check);
+
+void compute_displace(vector<int> &sdispl, vector<int> &rdispl, const vector<int> &sendcnts, const vector<int> &recvcnts, MPI_Comm comm);
 
 // ...
 

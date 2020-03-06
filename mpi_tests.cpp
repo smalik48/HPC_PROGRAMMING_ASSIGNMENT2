@@ -21,6 +21,8 @@
 
 #include "io.h"
 #include "parallel_sort.h"
+#include <algorithm>
+
 
 /*********************************************************************
  *                   Add your own test cases here.                   *
@@ -54,3 +56,67 @@ TEST(MpiTest, Sort10)
         }
 }
 
+//number of elements are less than the processors
+TEST(MpiTest, Sort3)
+{
+    int x_in[3] = {4, 7, 5};
+    int y_ex[3] = {4, 5, 7};
+    std::vector<int> x(x_in, x_in+3);
+    std::vector<int> local_x = scatter_vector_block_decomp(x, MPI_COMM_WORLD);
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    parallel_sort(&local_x[0], &local_x[0]+local_x.size(), MPI_COMM_WORLD);
+
+    std::vector<int> y = gather_vectors(local_x, MPI_COMM_WORLD);
+
+    if (rank == 0)
+        for (int i = 0; i < 3; ++i) {
+            EXPECT_EQ(y_ex[i], y[i]);
+        }
+}
+
+//number of elements sorted inversely
+TEST(MpiTest, Sort10_inverse)
+{
+    int x_in[10] = {10,9,8,7,6,5,4,3,2,1};
+    int y_ex[10] = {1,2,3,4,5,6,7,8,9,10};
+    std::vector<int> x(x_in, x_in+10);
+    std::vector<int> local_x = scatter_vector_block_decomp(x, MPI_COMM_WORLD);
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    parallel_sort(&local_x[0], &local_x[0]+local_x.size(), MPI_COMM_WORLD);
+
+    std::vector<int> y = gather_vectors(local_x, MPI_COMM_WORLD);
+
+    if (rank == 0)
+        for (int i = 0; i < 10; ++i) {
+            EXPECT_EQ(y_ex[i], y[i]);
+        }
+}
+
+//number of elements are picked random
+TEST(MpiTest, Sort10_random)
+{
+    srand(0);
+    int x_in[10] = {rand()%10,rand()%10,rand()%10,rand()%10,rand()%10,rand()%10,rand()%10,rand()%10,rand()%10,rand()%10};
+    std::vector<int> y_ex(x_in, x_in+10);
+    std::sort(y_ex.begin(),y_ex.end());
+    std::vector<int> x(x_in, x_in+10);
+    std::vector<int> local_x = scatter_vector_block_decomp(x, MPI_COMM_WORLD);
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    parallel_sort(&local_x[0], &local_x[0]+local_x.size(), MPI_COMM_WORLD);
+
+    std::vector<int> y = gather_vectors(local_x, MPI_COMM_WORLD);
+
+    if (rank == 0)
+        for (int i = 0; i < 10; ++i) {
+            EXPECT_EQ(y_ex[i], y[i]);
+        }
+}
