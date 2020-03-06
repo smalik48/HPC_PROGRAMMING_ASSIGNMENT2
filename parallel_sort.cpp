@@ -8,55 +8,6 @@
 
 #include "parallel_sort.h"
 #include "utils.h"
-// Set the random seed
-int random_number_generate(int total){
-  srand(0);
-  return (rand() % total);
-}
-
-
-//create subarray of greater and smaller values
-
-void sub_array_create(int* begin, int* end, vector<int> &smaller_than_pivot, vector<int> &greater_than_pivot, int pivot){
-  for(auto i = begin; i!=end;i++){
-    if(*i<=pivot)smaller_than_pivot.push_back(*i);
-    else greater_than_pivot.push_back(*i);
-  }
-}
-
-void compute_srcounts(vector<int> &sendcnts, vector<int> &recvcnts, int barrier, vector<int> arr, vector<int> new_size, MPI_Comm comm, int check){
-  int p, rank;
-  MPI_Comm_size(comm, &p);
-  MPI_Comm_rank(comm, &rank);
-
-  //check whether the sendcnts are computed for larger or smaller array
-  int j;
-  //denote the recieving processors
-  j = (check == 1)? barrier : 0;
-  for(int i = 0 ; i < p ; i++ ){
-    //start filling the arrays
-    int send = arr[i];
-    while(send > 0){
-      int temp = (send <= new_size[j])? send : new_size[j];
-      if(i == rank) sendcnts[j] = temp;
-      if(j == rank) recvcnts[i] = temp;
-      send -= temp;
-      new_size[j] -= temp;
-      if(new_size[j]==0)j++;
-    }
-  }
-}
-
-void compute_displace(vector<int> &sdispl, vector<int> &rdispl, const vector<int> &sendcnts, const vector<int> &recvcnts, MPI_Comm comm){
-  int p, rank;
-  MPI_Comm_size(comm, &p);
-  MPI_Comm_rank(comm, &rank);
-
-  for (int i = 1; i < p; i++) {
-    sdispl[i] = sdispl[i - 1] + sendcnts[i - 1];
-    rdispl[i] = rdispl[i - 1] + recvcnts[i - 1];
-  }
-}
 
 // implementation of your parallel sorting
 void parallel_sort(int * begin, int* end, MPI_Comm comm) {
@@ -211,5 +162,54 @@ void parallel_sort(int * begin, int* end, MPI_Comm comm) {
 /*********************************************************************
  *             Implement your own helper functions here:             *
  *********************************************************************/
+ // Set the random seed
+ int random_number_generate(int total){
+   srand(0);
+   return (rand() % total);
+ }
+
+
+ //create subarray of greater and smaller values
+
+ void sub_array_create(int* begin, int* end, vector<int> &smaller_than_pivot, vector<int> &greater_than_pivot, int pivot){
+   for(auto i = begin; i!=end;i++){
+     if(*i<=pivot)smaller_than_pivot.push_back(*i);
+     else greater_than_pivot.push_back(*i);
+   }
+ }
+
+ void compute_srcounts(vector<int> &sendcnts, vector<int> &recvcnts, int barrier, vector<int> arr, vector<int> new_size, MPI_Comm comm, int check){
+   int p, rank;
+   MPI_Comm_size(comm, &p);
+   MPI_Comm_rank(comm, &rank);
+
+   //check whether the sendcnts are computed for larger or smaller array
+   int j;
+   //denote the recieving processors
+   j = (check == 1)? barrier : 0;
+   for(int i = 0 ; i < p ; i++ ){
+     //start filling the arrays
+     int send = arr[i];
+     while(send > 0){
+       int temp = (send <= new_size[j])? send : new_size[j];
+       if(i == rank) sendcnts[j] = temp;
+       if(j == rank) recvcnts[i] = temp;
+       send -= temp;
+       new_size[j] -= temp;
+       if(new_size[j]==0)j++;
+     }
+   }
+ }
+
+ void compute_displace(vector<int> &sdispl, vector<int> &rdispl, const vector<int> &sendcnts, const vector<int> &recvcnts, MPI_Comm comm){
+   int p, rank;
+   MPI_Comm_size(comm, &p);
+   MPI_Comm_rank(comm, &rank);
+
+   for (int i = 1; i < p; i++) {
+     sdispl[i] = sdispl[i - 1] + sendcnts[i - 1];
+     rdispl[i] = rdispl[i - 1] + recvcnts[i - 1];
+   }
+ }
 
 // ...
