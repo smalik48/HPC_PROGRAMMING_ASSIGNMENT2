@@ -1,0 +1,56 @@
+
+*******Algorithm implementation*****
+Basically, our implementation follows the instruction in the assignment and the program structure given.
+
+
+****Redesign of the C++ function parallel_sort***
+In the given program, the major sorting function is defined as
+void parallel_sort(int* begin, int* end, MPI_Comm comm)
+whose main disadvantage is that the array [begin, end)} is fixed that we cannot resize
+or redirect the pointer. This is mainly intended to do the in-place sorting. However, in
+the parallel Quick Sorting, we need to irregularly partition the array that the size of
+local array may change. In-place sorting is not quite feasible in our case
+A natural way to implement this function is to store the data in a temporary array  rbuf after
+partition, then recursively implement parallel_sort} to rbuf in the partitioned communicator,
+at the end, copy the rbuf back to [begin, end)} array.
+
+One problem about this implementation is the storage usage piling up along the recursive call
+of parallel_sort}. The rbuf cannot be deleted until the related sorting parallel_sort over
+it is finished. So, there will be a increase of storage use in each call of parallel_sort(). As
+we’ve known that, for a general array, we need to recursively call the parallel_sort for at least
+O(log p) times in some processor.  Assuming the best case where the partition is uniform such that each processor
+holds O(n/p) in all the steps, the storage in a processor will go up to O(n/plogp). As a result as p grows big the extra space
+needed for this implementation is non negligible
+
+
+Analysis of Parallel Quick sort
+
+The time complexity of the parallel sorting algorithm is mainly
+:Computation time(best case say work load is evenly distributed):
+O(n/p*log(n/p) + n/p log p) - > local sorting + partitioning time
+
+Communication time: All to All communication is the step that will dominate which will happen logp times
+Considering arbitrary permutations time taken will be: O(log(p) * (Tp + u(n/p)p)
+
+
+Worst case complexity -> the number of recursion steps : O(p) instead of O(logp)
+Also pivot selection is worst where in we keep on choosing the minima or maxima all the time
+and end up with a single processor doing all the job O(n*logn) plus the communication overhead which is going to be worse
+
+Since we are picking up random pivots in each recursive step the likelihood of such worst case in pivot selection will not occur
+in an average case
+
+
+Observations:
+
+As we run for array size =1000 for processors {2,4,8,16} we see that for as we increase
+the number of processors the time for sorting increase because the N is not that large to start with and
+with increasing p increase the communication time due to repeated all to all communications
+Hence not much benefit is achieved with multi processors
+But as we run for an array size n = 100000, we clearly see p=16 performing way better than p=2 ,this is because n is large
+hence computation time is better for 16 and advantage of parallel computing is seen and computation time reduces and
+communication overhead is not seen as most of the processor are doing something most of the time.
+
+These above observations can be understood from the speed up analysis -> computation time in linearithmic in n(nlogn) where
+as communication time is approximately linear in n. So as n increases, we start seeing advantage of parallel processing
+Hence proving our observations
